@@ -1,4 +1,4 @@
-name: Build VehicleStats ASI
+name: Build VehicleStats
 
 on:
   push:
@@ -9,23 +9,22 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x86
-
-      - name: Compile
+      - name: Compile (acha o VehicleStats.cpp em qualquer pasta)
         shell: pwsh
         run: |
           $src = Get-ChildItem -Recurse -Filter VehicleStats.cpp | Select-Object -First 1
-          if (-not $src) { throw "VehicleStats.cpp nao encontrado" }
-          Set-Location $src.DirectoryName
-          cl /nologo /LD /O2 /MT /EHsc VehicleStats.cpp /Fe:VehicleStats.asi /link /DYNAMICBASE:NO user32.lib
-          if ($LASTEXITCODE -ne 0) { throw "Falha na compilacao" }
-
+          if (-not $src) { Write-Error "VehicleStats.cpp nao encontrado no repositorio"; exit 1 }
+          Write-Host "Compilando $($src.FullName)"
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          cl /nologo /LD /O2 /MT /EHsc /D_CRT_SECURE_NO_WARNINGS $src.FullName /Fe:out\VehicleStats.asi /Fo:out\ /link user32.lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Remove-Item out\*.obj, out\*.lib, out\*.exp -ErrorAction SilentlyContinue
+          $ini = Get-ChildItem -Recurse -Filter VehicleStats.ini | Select-Object -First 1
+          if ($ini) { Copy-Item $ini.FullName out\ }
       - uses: actions/upload-artifact@v4
         with:
           name: VehicleStats
-          path: |
-            **/VehicleStats.asi
-            **/VehicleStats.ini
+          path: out/
