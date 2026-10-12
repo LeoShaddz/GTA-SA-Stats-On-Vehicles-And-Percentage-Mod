@@ -2,9 +2,9 @@
 
 This mod allows you to open the stats window while inside a vehicle. When you open it inside a vehicle, your skill level for that specific vehicle is displayed in the stats window. This is inspired by the mobile version of the game, but the stats window position is the same as in the original game. 
 
-![Screenshot](https://i.postimg.cc/Hn9hZD2Y/Captura-de-Tela-(59).png)
+![Screenshot](https://i.postimg.cc/Hkdy1GtG/Captura-de-Tela-(60).png)
 
-![Screenshot](https://i.postimg.cc/qMCrLzfm/Captura-de-Tela-(58).png)
+![Screenshot](https://i.postimg.cc/13sq1xKZ/Captura-de-Tela-(61).png))
 
 This mod supports controllers, but to open the stats window while inside a vehicle using a controller, you use the D-pad Left, since the LB button is used for other actions while in a vehicle in the original game.
 
