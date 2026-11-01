@@ -97,6 +97,7 @@ static float g_noticeOffset = 0.80f;
 static bool  g_center       = false;  // [Percent] CenterText: center the text inside the bar
 static float g_noticePad    = 1.20f;   // distance from the right edge (in multiples of the bar height)
 static int   g_logCount     = 0;
+static bool  g_logEnabled   = false;  // [VehicleStats] EnableLog: 1 = writes VehicleStats.log
 static float g_holdSec      = 0.0f;   // [VehicleStats] HoldSeconds: seconds the key/button must be held (0 / missing = instant)
 static float g_textScale = 1.0f;
 
@@ -177,6 +178,7 @@ static void LoadConfig()
 // ---------------- Logging ----------------
 static void Log(const char* fmt, ...)
 {
+    if (!g_logEnabled) return;
     FILE* f = fopen("VehicleStats.log", "a");
     if (!f) return;
     va_list ap;
@@ -480,12 +482,12 @@ BOOL APIENTRY DllMain(HMODULE hm, DWORD reason, LPVOID)
     if (reason != DLL_PROCESS_ATTACH) return TRUE;
     DisableThreadLibraryCalls(hm);
 
-    FILE* f = fopen("VehicleStats.log", "w");
-    if (f) fclose(f);
-
     GetModuleFileNameA(hm, g_iniPath, MAX_PATH);
     char* dot = strrchr(g_iniPath, '.');
     if (dot) strcpy(dot, ".ini");
+
+    g_logEnabled = GetPrivateProfileIntA("VehicleStats", "EnableLog", 0, g_iniPath) != 0;
+    if (g_logEnabled) { FILE* f = fopen("VehicleStats.log", "w"); if (f) fclose(f); }
 
     if (*(uint32_t*)VERSION_ADDR != VERSION_OK)
     {
