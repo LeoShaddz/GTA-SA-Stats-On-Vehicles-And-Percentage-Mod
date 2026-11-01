@@ -97,6 +97,7 @@ static float g_noticeOffset = 0.80f;
 static bool  g_center       = false;  // [Percent] CenterText: center the text inside the bar
 static float g_noticePad    = 1.20f;   // distance from the right edge (in multiples of the bar height)
 static int   g_logCount     = 0;
+static float g_holdSec      = 0.0f;   // [VehicleStats] HoldSeconds: seconds the key/button must be held (0 / missing = instant)
 static float g_textScale = 1.0f;
 
 struct PadBtn { const char* name; int idx; };
@@ -154,6 +155,11 @@ static void LoadConfig()
     g_padIdx = 10;
     for (const PadBtn& b : kPad)
         if (!_stricmp(buf, b.name)) { g_padIdx = b.idx; break; }
+
+    // HoldSeconds: missing, empty or commented out (;) = opens instantly, like before
+    GetPrivateProfileStringA("VehicleStats", "HoldSeconds", "", buf, sizeof(buf), g_iniPath);
+    g_holdSec = buf[0] ? (float)atof(buf) : 0.0f;
+    if (g_holdSec < 0.0f) g_holdSec = 0.0f;
 
     g_skillRow  = GetPrivateProfileIntA("Layout", "SkillRow", 1, g_iniPath) != 0;
     g_percent   = GetPrivateProfileIntA("Percent", "ShowPercent", 0, g_iniPath) != 0;
@@ -221,7 +227,10 @@ static void* PlayerVehicle()
     return ((void* (__cdecl*)(int, bool))FIND_VEHICLE)(-1, false);
 }
 
-static bool Triggered(void* pad)
+static bool g_rawPrev = false;      // key/button was down on the previous check
+static DWORD g_rawStart = 0;        // when it was first pressed
+
+static bool RawPressed(void* pad)
 {
     if (g_useKey && GameFocused() && (GetAsyncKeyState(g_vk) & 0x8000)) return true;
     if (g_usePad && pad)
@@ -232,6 +241,16 @@ static bool Triggered(void* pad)
     return false;
 }
 
+// Key/button pressed, and (if HoldSeconds is set) held long enough. Safe to call several times per frame.
+static bool Triggered(void* pad)
+{
+    if (!RawPressed(pad)) { g_rawPrev = false; return false; }
+    const DWORD now = GetTickCount();
+    if (!g_rawPrev) { g_rawPrev = true; g_rawStart = now; }
+    if (g_holdSec <= 0.0f) return true;
+    return (now - g_rawStart) >= (DWORD)(g_holdSec * 1000.0f);
+}
+
 static int  g_logForce = 0, g_logVeh = 0;
 static bool g_prevForce = false;
 
@@ -239,7 +258,7 @@ static bool g_prevForce = false;
 static bool __cdecl ForceNow()
 {
     if (!g_enabled) return false;
-    if (!PlayerVehicle()) return false;
+    if (!PlayerVehicle()) { g_rawPrev = false; return false; }
     void* pad = ((void* (__cdecl*)(int))GET_PAD)(0);
     bool t = Triggered(pad);
     if (t != g_prevForce)
@@ -475,8 +494,8 @@ BOOL APIENTRY DllMain(HMODULE hm, DWORD reason, LPVOID)
     }
 
     LoadConfig();
-    Log("Config: enabled=%d key=%d(vk=0x%02X) pad=%d(idx=%d) skillRow=%d percent=%d scale=%.2f",
-        g_enabled, g_useKey, g_vk, g_usePad, g_padIdx, g_skillRow, g_percent, g_textScale);
+    Log("Config: enabled=%d key=%d(vk=0x%02X) pad=%d(idx=%d) skillRow=%d percent=%d scale=%.2f hold=%.2fs",
+        g_enabled, g_useKey, g_vk, g_usePad, g_padIdx, g_skillRow, g_percent, g_textScale, g_holdSec);
 
     // Verify the original bytes before modifying anything
     static const uint8_t expectTest[5] = { 0x66, 0x85, 0xC0, 0x74, 0x1E };
