@@ -10,6 +10,13 @@ This mod supports controllers, but to open the stats window while inside a vehic
 
 In the .ini file, you can enable the display of your skill values ​​as percentages and decide whether to display them centered (recommended) or near the edge.
 
+# Installation
+
+1. Install the Silent's Asi Loader and Modloader in in the game's root folder
+2. Extract the file "GTA.SA.Vehicle.Stats.And.Percentage.Mod.v1.0.zip"
+3. Copy the "Vehicle Stats And Percentage" folder into the "modloader" folder, which is located in your game's root directory.
+4. Done
+
 # AI disclosure
 The code of this mod was written by Claude Sonnet 5.5 and tested in-game by me.
 
